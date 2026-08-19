@@ -50,6 +50,7 @@ const translations = {
     sensorNetwork: "Сеть сенсоров FireWatch",
     normalLegend: "Норма",
     warningLegend: "Предупреждение",
+    highLegend: "Высокий риск",
     criticalLegend: "Критическая ситуация",
     monitoringZone: "Зона мониторинга Уральска",
 
@@ -63,7 +64,8 @@ const translations = {
     riskScale: "Шкала риска",
     riskNormal: "0–29 • НОРМА",
     riskWarning: "30–59 • ПРЕДУПРЕЖДЕНИЕ",
-    riskCritical: "60–100 • КРИТИЧЕСКИЙ",
+    riskHigh: "60–74 • ВЫСОКИЙ РИСК",
+    riskCritical: "75–100 • КРИТИЧЕСКИЙ",
 
     simulateFire: "СИМУЛИРОВАТЬ ПОЖАР",
     resetSimulation: "↺ Сбросить симуляцию",
@@ -157,6 +159,7 @@ const translations = {
     sensorNetwork: "FireWatch sensor network",
     normalLegend: "Normal",
     warningLegend: "Warning",
+    highLegend: "High risk",
     criticalLegend: "Critical",
     monitoringZone: "Uralsk monitoring zone",
 
@@ -170,7 +173,8 @@ const translations = {
     riskScale: "Risk Scale",
     riskNormal: "0–29 • NORMAL",
     riskWarning: "30–59 • WARNING",
-    riskCritical: "60–100 • CRITICAL",
+    riskHigh: "60–74 • HIGH RISK",
+    riskCritical: "75–100 • CRITICAL",
 
     simulateFire: "SIMULATE FIRE",
     resetSimulation: "↺ Reset Simulation",
@@ -307,6 +311,89 @@ export default function Home() {
 
   const selectedHistory =
     sensorHistory[selectedStation.id] ?? [];
+
+  /*
+   * VISUAL RISK LEVEL
+   *
+   * Здесь цвет определяется именно числом Risk Score.
+   *
+   * 0–29   = GREEN
+   * 30–59  = YELLOW
+   * 60–74  = ORANGE
+   * 75–100 = RED
+   *
+   * Поэтому, например, 59 всегда будет ЖЁЛТЫМ.
+   */
+
+  const getRiskLevel = (risk: number) => {
+    if (risk >= 75) {
+      return "CRITICAL";
+    }
+
+    if (risk >= 60) {
+      return "HIGH";
+    }
+
+    if (risk >= 30) {
+      return "WARNING";
+    }
+
+    return "NORMAL";
+  };
+
+  const getRiskTextColor = (risk: number) => {
+    const level = getRiskLevel(risk);
+
+    if (level === "CRITICAL") {
+      return "text-red-400";
+    }
+
+    if (level === "HIGH") {
+      return "text-orange-400";
+    }
+
+    if (level === "WARNING") {
+      return "text-yellow-400";
+    }
+
+    return "text-emerald-400";
+  };
+
+  const getRiskBackground = (risk: number) => {
+    const level = getRiskLevel(risk);
+
+    if (level === "CRITICAL") {
+      return "border-red-500/20 bg-red-500/5";
+    }
+
+    if (level === "HIGH") {
+      return "border-orange-500/20 bg-orange-500/5";
+    }
+
+    if (level === "WARNING") {
+      return "border-yellow-500/20 bg-yellow-500/5";
+    }
+
+    return "border-emerald-500/20 bg-emerald-500/5";
+  };
+
+  const getRiskBarColor = (risk: number) => {
+    const level = getRiskLevel(risk);
+
+    if (level === "CRITICAL") {
+      return "bg-red-500";
+    }
+
+    if (level === "HIGH") {
+      return "bg-orange-500";
+    }
+
+    if (level === "WARNING") {
+      return "bg-yellow-500";
+    }
+
+    return "bg-emerald-500";
+  };
 
   const statusStyles = {
     NORMAL:
@@ -690,12 +777,13 @@ export default function Home() {
 
   const warningCount = stations.filter(
     (station) =>
-      station.status === "WARNING"
+      station.risk >= 30 &&
+      station.risk < 60
   ).length;
 
   const criticalCount = stations.filter(
     (station) =>
-      station.status === "CRITICAL"
+      station.risk >= 75
   ).length;
 
   const eventTypeStyles: Record<
@@ -972,13 +1060,17 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="flex gap-4 text-xs text-slate-400">
+              <div className="flex flex-wrap gap-4 text-xs text-slate-400">
                 <span>
                   🟢 {t.normalLegend}
                 </span>
 
                 <span>
                   🟡 {t.warningLegend}
+                </span>
+
+                <span>
+                  🟠 {t.highLegend}
                 </span>
 
                 <span>
@@ -1016,8 +1108,12 @@ export default function Home() {
                     station.id;
 
                   const isCritical =
-                    station.status ===
-                    "CRITICAL";
+                    station.risk >= 75;
+
+                  const visualRisk =
+                    getRiskLevel(
+                      station.risk
+                    );
 
                   return (
                     <div
@@ -1044,7 +1140,7 @@ export default function Home() {
                         }
                         className="relative z-10 flex flex-col items-center"
                       >
-                        {/* FIRE FLAME */}
+                        {/* FIRE ALERT */}
 
                         {isCritical && (
                           <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap">
@@ -1056,11 +1152,16 @@ export default function Home() {
 
                         <div
                           className={`flex h-10 w-10 items-center justify-center rounded-full border-4 text-lg shadow-lg transition ${
-                            isCritical
+                            visualRisk ===
+                            "CRITICAL"
                               ? "border-red-300 bg-red-600 shadow-red-500/70"
-                              : statusStyles[
-                                  station.status
-                                ]
+                              : visualRisk ===
+                                  "HIGH"
+                                ? "border-orange-300 bg-orange-500 shadow-orange-500/50"
+                                : visualRisk ===
+                                    "WARNING"
+                                  ? "border-yellow-300 bg-yellow-500 shadow-yellow-500/40"
+                                  : statusStyles.NORMAL
                           } ${
                             isSelected
                               ? "scale-125 ring-2 ring-white/40"
@@ -1137,15 +1238,18 @@ export default function Home() {
 
               <span
                 className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                  selectedStation.status ===
-                  "CRITICAL"
+                  getRiskLevel(
+                    selectedStation.risk
+                  ) === "CRITICAL"
                     ? "bg-red-500/10 text-red-400"
-                    : selectedStation.status ===
-                        "WARNING"
-                      ? "bg-yellow-500/10 text-yellow-400"
-                      : selectedStation.status ===
-                          "HIGH"
-                        ? "bg-orange-500/10 text-orange-400"
+                    : getRiskLevel(
+                          selectedStation.risk
+                        ) === "HIGH"
+                      ? "bg-orange-500/10 text-orange-400"
+                      : getRiskLevel(
+                            selectedStation.risk
+                          ) === "WARNING"
+                        ? "bg-yellow-500/10 text-yellow-400"
                         : "bg-emerald-500/10 text-emerald-400"
                 }`}
               >
@@ -1203,15 +1307,9 @@ export default function Home() {
             {/* RISK */}
 
             <div
-              className={`mt-6 rounded-xl border p-5 ${
-                selectedStation.status ===
-                "CRITICAL"
-                  ? "border-red-500/20 bg-red-500/5"
-                  : selectedStation.status ===
-                      "WARNING"
-                    ? "border-yellow-500/20 bg-yellow-500/5"
-                    : "border-emerald-500/20 bg-emerald-500/5"
-              }`}
+              className={`mt-6 rounded-xl border p-5 ${getRiskBackground(
+                selectedStation.risk
+              )}`}
             >
               <div className="flex items-end justify-between">
                 <div>
@@ -1220,15 +1318,9 @@ export default function Home() {
                   </p>
 
                   <p
-                    className={`mt-1 text-4xl font-bold ${
-                      selectedStation.status ===
-                      "CRITICAL"
-                        ? "text-red-400"
-                        : selectedStation.status ===
-                            "WARNING"
-                          ? "text-yellow-400"
-                          : "text-emerald-400"
-                    }`}
+                    className={`mt-1 text-4xl font-bold ${getRiskTextColor(
+                      selectedStation.risk
+                    )}`}
                   >
                     {selectedStation.risk}
 
@@ -1243,17 +1335,13 @@ export default function Home() {
                 </span>
               </div>
 
+              {/* RISK BAR */}
+
               <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-800">
                 <div
-                  className={`h-full rounded-full ${
-                    selectedStation.status ===
-                    "CRITICAL"
-                      ? "bg-red-500"
-                      : selectedStation.status ===
-                          "WARNING"
-                        ? "bg-yellow-500"
-                        : "bg-emerald-500"
-                  }`}
+                  className={`h-full rounded-full transition-all duration-500 ${getRiskBarColor(
+                    selectedStation.risk
+                  )}`}
                   style={{
                     width: `${selectedStation.risk}%`,
                   }}
@@ -1278,6 +1366,11 @@ export default function Home() {
                     {t.riskWarning}
                   </span>
 
+                  <span className="flex items-center gap-1.5 text-orange-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
+                    {t.riskHigh}
+                  </span>
+
                   <span className="flex items-center gap-1.5 text-red-400">
                     <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
                     {t.riskCritical}
@@ -1288,8 +1381,10 @@ export default function Home() {
 
             {/* DRONE */}
 
-            {(selectedStation.status ===
-              "WARNING" ||
+            {(selectedStation.risk >=
+              30 ||
+              selectedStation.status ===
+                "WARNING" ||
               selectedStation.status ===
                 "HIGH" ||
               selectedStation.status ===
@@ -1350,8 +1445,8 @@ export default function Home() {
 
             {/* ALERT */}
 
-            {selectedStation.status ===
-              "CRITICAL" && (
+            {selectedStation.risk >=
+              75 && (
               <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 p-4">
                 <p className="font-semibold text-red-400">
                   🚨 {t.fireAlert}
