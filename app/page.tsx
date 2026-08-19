@@ -36,7 +36,6 @@ const translations = {
 
     smartCity: "Умный город • Мониторинг пожаров",
     dashboard: "Панель FireWatch",
-    
 
     activeStations: "Активные станции",
     monitoringNow: "Мониторинг ведётся",
@@ -60,6 +59,11 @@ const translations = {
     humidity: "Влажность",
     smoke: "Дым",
     fireRisk: "Риск пожара",
+
+    riskScale: "Шкала риска",
+    riskNormal: "0–29 • НОРМА",
+    riskWarning: "30–59 • ПРЕДУПРЕЖДЕНИЕ",
+    riskCritical: "60–100 • КРИТИЧЕСКИЙ",
 
     simulateFire: "СИМУЛИРОВАТЬ ПОЖАР",
     resetSimulation: "↺ Сбросить симуляцию",
@@ -139,8 +143,6 @@ const translations = {
 
     smartCity: "Smart City • Fire Monitoring",
     dashboard: "FireWatch Dashboard",
-    dashboardDescription:
-      "Real-time environmental monitoring and early detection of potential fire hazards.",
 
     activeStations: "Active Stations",
     monitoringNow: "Monitoring now",
@@ -164,6 +166,11 @@ const translations = {
     humidity: "Humidity",
     smoke: "Smoke",
     fireRisk: "Fire Risk",
+
+    riskScale: "Risk Scale",
+    riskNormal: "0–29 • NORMAL",
+    riskWarning: "30–59 • WARNING",
+    riskCritical: "60–100 • CRITICAL",
 
     simulateFire: "SIMULATE FIRE",
     resetSimulation: "↺ Reset Simulation",
@@ -432,12 +439,6 @@ export default function Home() {
       t.simulationStarted
     );
 
-    /*
-     * IMPORTANT:
-     * The simulation starts from the CURRENT
-     * values of the SELECTED station.
-     */
-
     const simulation = [
       {
         temperature: stationAtStart.temperature,
@@ -582,8 +583,10 @@ export default function Home() {
             ...station,
             temperature:
               values.temperature,
-            humidity: values.humidity,
-            smoke: values.smoke,
+            humidity:
+              values.humidity,
+            smoke:
+              values.smoke,
             risk: result.risk,
             status: result.status,
           };
@@ -890,8 +893,6 @@ export default function Home() {
           <h2 className="text-4xl font-bold tracking-tight">
             {t.dashboard}
           </h2>
-
-          
         </div>
 
         {/* STATISTICS */}
@@ -1257,6 +1258,31 @@ export default function Home() {
                     width: `${selectedStation.risk}%`,
                   }}
                 />
+              </div>
+
+              {/* RISK SCALE */}
+
+              <div className="mt-4 border-t border-slate-800 pt-3">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                  {t.riskScale}
+                </p>
+
+                <div className="flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-medium">
+                  <span className="flex items-center gap-1.5 text-emerald-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    {t.riskNormal}
+                  </span>
+
+                  <span className="flex items-center gap-1.5 text-yellow-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-yellow-400" />
+                    {t.riskWarning}
+                  </span>
+
+                  <span className="flex items-center gap-1.5 text-red-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                    {t.riskCritical}
+                  </span>
+                </div>
               </div>
             </div>
 
